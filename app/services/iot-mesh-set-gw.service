@@ -1,0 +1,13 @@
+[Unit]
+Description=Gateway Service
+After=iot-mesh-set-ip.service
+
+[Service]
+Type=simple
+ExecStart=/opt/iot-mesh/app/set_gw.sh
+WorkingDirectory=/opt/iot-mesh/app/
+Restart=on-failure
+User=root
+
+[Install]
+WantedBy=multi-user.target

@@ -29,8 +29,10 @@ if [ "$1" == "client" ]; then
     echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
     systemctl enable iot-mesh.service
     systemctl enable iot-mesh-set-ip.service
+    systemctl enable iot-mesh-set-gw.service
     systemctl start iot-mesh
     systemctl start iot-mesh-set-ip
+    systemctl start iot-mesh-set-gw
     sysctl -p
     clear 
     sleep 2
