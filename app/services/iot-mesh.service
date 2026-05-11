@@ -1,0 +1,14 @@
+
+[Unit]
+Description=IoT Mesh Service
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/iot-mesh/app/startup.sh start
+ExecStop=/opt/iot-mesh/app/startup.sh stop
+ExecReload=/opt/iot-mesh/app/startup.sh reload
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
