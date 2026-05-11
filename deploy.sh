@@ -27,9 +27,26 @@ if [ "$1" == "client" ]; then
     cp /opt/iot-mesh/app/services/* /lib/systemd/system/
     systemctl daemon-reload
     echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
+    systemctl enable iot-mesh.service
+    systemctl enable iot-mesh-set-ip.service
+    systemctl start iot-mesh
+    systemctl start iot-mesh-set-ip
     sysctl -p
     clear 
-    sleep 1
+    sleep 2
+    echo " "
+    echo " 
+░██████           ░██████████        ░███     ░███                       ░██        
+  ░██                 ░██            ░████   ░████                       ░██        
+  ░██   ░███████      ░██            ░██░██ ░██░██  ░███████   ░███████  ░████████  
+  ░██  ░██    ░██     ░██    ░██████ ░██ ░████ ░██ ░██    ░██ ░██        ░██    ░██ 
+  ░██  ░██    ░██     ░██            ░██  ░██  ░██ ░█████████  ░███████  ░██    ░██ 
+  ░██  ░██    ░██     ░██            ░██       ░██ ░██               ░██ ░██    ░██ 
+░██████ ░███████      ░██            ░██       ░██  ░███████   ░███████  ░██    ░██ 
+
+" 
+    echo " "
+    echo " "    
     echo "Your network is being initialized."
 
 elif [ "$1" == "router" ]; then

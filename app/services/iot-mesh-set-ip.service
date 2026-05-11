@@ -1,0 +1,13 @@
+[Unit]
+Description=IP Service
+After=iot-mesh.service
+
+[Service]
+Type=simple
+ExecStart=/opt/iot-mesh/app/set_ip
+WorkingDirectory=/opt/iot-mesh/app/
+Restart=on-failure
+User=root
+
+[Install]
+WantedBy=multi-user.target
