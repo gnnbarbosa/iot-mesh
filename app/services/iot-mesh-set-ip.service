@@ -4,7 +4,7 @@ After=iot-mesh.service
 
 [Service]
 Type=simple
-ExecStart=/opt/iot-mesh/app/set_ip
+ExecStart=/opt/iot-mesh/app/set_ip.sh
 WorkingDirectory=/opt/iot-mesh/app/
 Restart=on-failure
 User=root
