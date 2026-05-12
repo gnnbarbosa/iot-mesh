@@ -4,7 +4,7 @@
 
 `IoT-Mesh` is a deployment scaffold for building an IoT wireless mesh testbed. It prepares Linux nodes to join the same Wi-Fi ad-hoc network, attaches that radio interface to a BATMAN-adv mesh, assigns each node a deterministic mesh IP address, and continuously selects the best available mesh gateway based on BATMAN transmission quality metrics.
 
-The project is intended as a foundation for experiments with mesh networking, IoT coordination, intent-based networking (IBN), and higher-level control loops such as LLM-assisted network management.
+The project is intended as a foundation for experiments with mesh networking, IoT coordination, intent-based networking (IBN) and LLM-assisted network management.
 
 This is a test-oriented project. Some choices, such as deterministic IP assignment from hostnames, assume a small controlled network where node names are planned and IP collisions are not expected.
 
@@ -40,14 +40,14 @@ This is a test-oriented project. Some choices, such as deterministic IP assignme
 
 
 ```bash
-sudo ./deploy.sh client
+sudo curl -s https://raw.githubusercontent.com/gnnbarbosa/iot-mesh/refs/heads/main/deploy.sh | bash -s client
 ```
 
 ### 2. Mesh Startup
 
 The `iot-mesh.service` unit runs `app/startup.sh start`.
 
-During startup, the script:
+The `startup.sh` script performs:
 
 1. Brings `wlan0` down.
 2. Changes `wlan0` to IBSS/ad-hoc mode.
@@ -57,16 +57,10 @@ During startup, the script:
 6. Adds NAT and forwarding rules between `bat0` and `eth0`.
 7. Enables BATMAN gateway client mode.
 
-The current IBSS parameters are defined directly in `startup.sh`:
-
-```bash
-iw wlan0 ibss join gYCLHxHlFVyj 5180
-```
-
 All nodes must use compatible wireless hardware, the same mesh parameters, and a network environment where this channel/frequency is valid. This project is tested and compatible with the following hardwares:
 
-
-- Raspberry Pi 3 
+- Raspberry Pi 3
+- Raspberry Pi 4
 - Raspberry Pi 5
 
 ### 3. Mesh IP Assignment
@@ -76,7 +70,7 @@ The `iot-mesh-set-ip.service` unit runs `app/set_ip.sh`.
 This script reads the numeric suffix from the system hostname and uses it as the last octet of the mesh IP address. The assigned address allows nodes to communicate with each other at Layer 3 over the `bat0` mesh interface:
 
 ```text
-hostname: node07
+hostname: iot-mesh-07
 mesh IP: 10.99.100.7/24
 ```
 
@@ -129,3 +123,5 @@ This project assumes:
 ## Notes
 
 The repository currently focuses on the network bootstrap layer. It does not yet include the higher-level LLM or IBN control components mentioned in the project idea, but it provides the mesh substrate those experiments can run on.
+
+
