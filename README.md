@@ -71,7 +71,7 @@ The `iot-mesh-set-ip` service reads the numeric suffix from the system hostname 
 hostname: iot-mesh-07
 mesh IP: 10.99.100.7/24
 ```
-s
+
 **Note**: This script runs when the operating system boots up. It does not need to be run manually.
 **Note**: Hostnames must end with a number between the intended node range. If the hostname does not end with a number, IP assignment fails. This simple addressing model is intended for small testbeds where node identifiers are coordinated manually and duplicate IP addresses are avoided by design.
 
