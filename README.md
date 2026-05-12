@@ -14,6 +14,7 @@ This is a test-oriented project. Some choices, such as deterministic IP assignme
 - A `bat0` mesh interface used for node-to-node communication.
 - Deterministic IPv4 address based on the node hostname.
 - Dynamic gateway selection using BATMAN gateway quality data.
+- Docker to deploy applications.
 
 
 ## Project Layout
