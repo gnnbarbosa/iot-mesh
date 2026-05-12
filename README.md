@@ -16,6 +16,12 @@ This is a test-oriented project. Some choices, such as deterministic IP assignme
 - Dynamic gateway selection using BATMAN gateway quality data.
 - Docker to deploy applications.
 
+All nodes must use compatible wireless hardware, the same mesh parameters, and a network environment where this channel/frequency is valid. This project is tested and compatible with the following hardwares:
+
+- Raspberry Pi 3
+- Raspberry Pi 4
+- Raspberry Pi 5
+
 
 ## Project Layout
 
@@ -36,8 +42,7 @@ This is a test-oriented project. Some choices, such as deterministic IP assignme
 
 ### 1. Deployment
 
-`deploy.sh` installs the required packages, enables the `batman-adv` kernel module, disables services that can interfere with direct wireless control, and clones this repository into `/opt/iot-mesh`.
-
+`deploy.sh` installs the required packages, enables the `iot-mesh.service`,`iot-mesh-set-ip.service` and `iot-mesh-set-gw.service` clones this repository into `/opt/iot-mesh`. After the process is complete, the node is ready to join the network. To start this process run the command below:
 
 ```bash
 sudo curl -s https://raw.githubusercontent.com/gnnbarbosa/iot-mesh/refs/heads/main/deploy.sh | bash -s client
@@ -45,9 +50,7 @@ sudo curl -s https://raw.githubusercontent.com/gnnbarbosa/iot-mesh/refs/heads/ma
 
 ### 2. Mesh Startup
 
-The `iot-mesh.service` unit runs `app/startup.sh start`.
-
-The `startup.sh` script performs:
+To start or stop the mesh service, just run  `system start|stop|status iot-mesh`. This service performs:
 
 1. Brings `wlan0` down.
 2. Changes `wlan0` to IBSS/ad-hoc mode.
@@ -57,30 +60,24 @@ The `startup.sh` script performs:
 6. Adds NAT and forwarding rules between `bat0` and `eth0`.
 7. Enables BATMAN gateway client mode.
 
-All nodes must use compatible wireless hardware, the same mesh parameters, and a network environment where this channel/frequency is valid. This project is tested and compatible with the following hardwares:
+**Note**: This script runs when the operating system boots up. It does not need to be run manually.
 
-- Raspberry Pi 3
-- Raspberry Pi 4
-- Raspberry Pi 5
 
 ### 3. Mesh IP Assignment
 
-The `iot-mesh-set-ip.service` unit runs `app/set_ip.sh`.
-
-This script reads the numeric suffix from the system hostname and uses it as the last octet of the mesh IP address. The assigned address allows nodes to communicate with each other at Layer 3 over the `bat0` mesh interface:
+The `iot-mesh-set-ip` service reads the numeric suffix from the system hostname and uses it as the last octet of the mesh IP address. The assigned address allows nodes to communicate with each other at Layer 3 over the `bat0` mesh interface:
 
 ```text
 hostname: iot-mesh-07
 mesh IP: 10.99.100.7/24
 ```
-
+s
+**Note**: This script runs when the operating system boots up. It does not need to be run manually.
 **Note**: Hostnames must end with a number between the intended node range. If the hostname does not end with a number, IP assignment fails. This simple addressing model is intended for small testbeds where node identifiers are coordinated manually and duplicate IP addresses are avoided by design.
 
 ### 4. Gateway Selection
 
-The `iot-mesh-set-gw.service` unit runs `app/set_gw.sh`.
-
-This script continuously monitors BATMAN gateway data and updates the default route through `bat0`. It reads gateway quality from `batctl gwl`, maps gateway MAC addresses to reachable IP addresses using BATMAN and neighbor data, then selects the best candidate.
+The `iot-mesh-set-gw` service continuously monitors BATMAN gateway data and updates the default route through `bat0`. It reads gateway quality from `batctl gwl`, maps gateway MAC addresses to reachable IP addresses using BATMAN and neighbor data, then selects the best candidate.
 
 Gateway switching is controlled by a few safeguards:
 
@@ -88,17 +85,13 @@ Gateway switching is controlled by a few safeguards:
 - A new gateway must provide a meaningful quality improvement.
 - A cooldown period prevents excessive route changes.
 
-The default route is applied with:
-
-```bash
-ip route replace default via <gateway-ip> dev bat0
-```
-
 For a node to be advertised as a gateway in the BATMAN-adv mesh, it must explicitly enable gateway server mode:
 
 ```bash
 batctl gw_mode server
 ```
+
+To start or stop or check the status for the gateway selection service just run: `systemctl status|start|stop iot-mesh-set-gw`
 
 ## Service Order
 
