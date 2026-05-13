@@ -6,8 +6,8 @@ REPO_DIR="/opt/iot-mesh"
 #Install dependencies and configure the system for mesh networking
 apt update && apt upgrade -y
 apt install batctl vim net-tools apache2 python3-pip python3-venv libgl1 jq iptables iw build-essential apt-transport-https ca-certificates gnupg git dkms linux-headers-$(uname -r) -y
-systemctl stop apache2
-systemctl disable apache2
+sudo systemctl stop apache2
+sudo systemctl disable apache2
 sudo apt remove wpasupplicant -y
 sudo apt autoremove -y
 
@@ -43,15 +43,15 @@ if [ "$1" == "client" ]; then
     apt update
     chmod +x /opt/iot-mesh/app/*.sh
     cp /opt/iot-mesh/app/services/* /lib/systemd/system/
-    systemctl daemon-reload
+    sudo systemctl daemon-reload
     echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
-    systemctl enable iot-mesh.service
-    systemctl enable iot-mesh-set-ip.service
-    systemctl enable iot-mesh-set-gw.service
-    systemctl start iot-mesh
-    systemctl start iot-mesh-set-ip
-    systemctl start iot-mesh-set-gw
-    sysctl -p
+    sudo systemctl enable iot-mesh.service
+    sudo systemctl enable iot-mesh-set-ip.service
+    sudo systemctl enable iot-mesh-set-gw.service
+    sudo systemctl start iot-mesh
+    sudo systemctl start iot-mesh-set-ip
+    sudo systemctl start iot-mesh-set-gw
+    sudo sysctl -p
     clear 
     sleep 2
     echo " "
