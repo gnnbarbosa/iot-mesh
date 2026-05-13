@@ -8,10 +8,8 @@ THRESHOLD_TQ=50
 SLEEP_INTERVAL=5
 MIN_IMPROVEMENT=15
 SWITCH_COOLDOWN=30
-CLEANUP_BAT0_DEFAULT_ON_LOCAL_GATEWAY=true
-CHECK_ETH0_CONNECTIVITY=false
 CONNECTIVITY_TARGET="1.1.1.1"
-
+CLEANUP_BAT0_DEFAULT_ON_LOCAL_GATEWAY=true
 LAST_SWITCH_TIME=0
 
 if [ "$(id -u)" -ne 0 ]; then
@@ -62,21 +60,35 @@ has_bat0_default_route() {
 cleanup_bat0_default_route() {
     if [ "$CLEANUP_BAT0_DEFAULT_ON_LOCAL_GATEWAY" = true ] && has_bat0_default_route; then
         ip route del default dev "$INTERFACE" 2>/dev/null
-        echo "[$(date +%T)] Removed default route via $INTERFACE because this node is a local gateway."
+        echo "[$(date +%T)] Removed default route via $INTERFACE because this node is a valid local gateway."
     fi
 }
 
-is_local_gateway_node() {
+disable_invalid_batman_gateway() {
     if is_batman_gateway_server; then
-        return 0
-    fi
+        if ! has_default_route_via_eth0 || ! has_eth0_connectivity; then
+            if batctl gw_mode client; then
+                echo "[$(date +%T)] Disabled BATMAN gateway mode: no valid connectivity via $UPLINK_INTERFACE."
+            else
+                echo "[$(date +%T)] Error: failed to disable BATMAN gateway mode."
+            fi
 
-    if has_default_route_via_eth0; then
-        if [ "$CHECK_ETH0_CONNECTIVITY" = true ]; then
-            has_eth0_connectivity && return 0
-        else
             return 0
         fi
+    fi
+
+    return 1
+}
+
+is_valid_local_gateway_node() {
+    if is_batman_gateway_server; then
+        if has_default_route_via_eth0 && has_eth0_connectivity; then
+            return 0
+        fi
+    fi
+
+    if has_default_route_via_eth0 && has_eth0_connectivity; then
+        return 0
     fi
 
     return 1
@@ -140,8 +152,11 @@ while true; do
     BEST_IP=""
     BEST_TQ=0
     CURRENT_TQ=0
-
-    if is_local_gateway_node; then
+    if disable_invalid_batman_gateway; then
+        sleep "$SLEEP_INTERVAL"
+        continue
+    fi
+    if is_valid_local_gateway_node; then
         cleanup_bat0_default_route
         sleep "$SLEEP_INTERVAL"
         continue
