@@ -3,11 +3,14 @@
 set -o pipefail
 
 INTERFACE="bat0"
-
+UPLINK_INTERFACE="eth0"
 THRESHOLD_TQ=50
 SLEEP_INTERVAL=5
 MIN_IMPROVEMENT=15
 SWITCH_COOLDOWN=30
+CLEANUP_BAT0_DEFAULT_ON_LOCAL_GATEWAY=true
+CHECK_ETH0_CONNECTIVITY=false
+CONNECTIVITY_TARGET="1.1.1.1"
 
 LAST_SWITCH_TIME=0
 
@@ -27,6 +30,57 @@ if ! ip link show "$INTERFACE" >/dev/null 2>&1; then
 fi
 
 trap 'exit 0' INT TERM
+
+has_default_route_via_eth0() {
+    ip route show default 2>/dev/null |
+    awk -v iface="$UPLINK_INTERFACE" '
+        $1 == "default" {
+            for (i = 1; i <= NF; i++) {
+                if ($i == "dev" && $(i + 1) == iface) {
+                    found = 1
+                }
+            }
+        }
+        END { exit found ? 0 : 1 }
+    '
+}
+
+has_eth0_connectivity() {
+    ping -I "$UPLINK_INTERFACE" -c 1 -W 1 "$CONNECTIVITY_TARGET" >/dev/null 2>&1
+}
+
+is_batman_gateway_server() {
+    batctl gw_mode 2>/dev/null |
+    grep -qiE 'server|gateway server|mode: server'
+}
+
+has_bat0_default_route() {
+    ip route show default dev "$INTERFACE" 2>/dev/null |
+    grep -q '^default'
+}
+
+cleanup_bat0_default_route() {
+    if [ "$CLEANUP_BAT0_DEFAULT_ON_LOCAL_GATEWAY" = true ] && has_bat0_default_route; then
+        ip route del default dev "$INTERFACE" 2>/dev/null
+        echo "[$(date +%T)] Removed default route via $INTERFACE because this node is a local gateway."
+    fi
+}
+
+is_local_gateway_node() {
+    if is_batman_gateway_server; then
+        return 0
+    fi
+
+    if has_default_route_via_eth0; then
+        if [ "$CHECK_ETH0_CONNECTIVITY" = true ]; then
+            has_eth0_connectivity && return 0
+        else
+            return 0
+        fi
+    fi
+
+    return 1
+}
 
 get_ip_for_mac() {
     local mac="$1"
@@ -87,6 +141,12 @@ while true; do
     BEST_TQ=0
     CURRENT_TQ=0
 
+    if is_local_gateway_node; then
+        cleanup_bat0_default_route
+        sleep "$SLEEP_INTERVAL"
+        continue
+    fi
+
     GW_DATA=$(batctl gwl -H 2>/dev/null | tr -d '()*')
     DC_DATA=$(batctl dc 2>/dev/null | tr -d '*')
     TG_DATA=$(batctl tg -n 2>/dev/null | tr -d '*')
@@ -136,7 +196,7 @@ while true; do
     if [ -z "$current_gw" ]; then
         if ip route replace default via "$BEST_IP" dev "$INTERFACE"; then
             LAST_SWITCH_TIME=$(date +%s)
-            echo "[$(date +%T)] Gateway aplied: $BEST_IP via $INTERFACE (TQ: $BEST_TQ)"
+            echo "[$(date +%T)] Gateway applied: $BEST_IP via $INTERFACE (TQ: $BEST_TQ)"
         fi
 
         sleep "$SLEEP_INTERVAL"
